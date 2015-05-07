@@ -1,0 +1,167 @@
+This README describes the starter code for assignment 6, Stack Smashing.
+You can pick up this distribution at
+   http://core/a6-starter.tar.gz
+
+To test exploits and access the secrets, you must use the virtual
+machine found at
+   http://core/cs432-smash.tar.gz
+The only reason we're running these virtual machines on panic boxes to
+because of relatively unlimited disk space.  Those of you with VMWare on
+your private machines may find it useful to run the virtual machine locally.
+See Mary for details about getting a VMWare licenses for your CS use on
+your own machine.
+
+The a6/targets directory in the assignment tarball contains the source
+code for the targets, along with a Makefile specifying how they are to
+be built.
+
+Your exploits should assume that the compiled target programs are
+installed setuid in /usr/local/bin/{target1,target2, etc}.
+
+There are seven targets.  You should submit exploits for the first two.
+Any others will give you slight extra credit.
+
+The a6/exploits directory contains skeleton source for the exploits.
+Also included is shellcode.h, which gives Aleph One's shellcode.
+(Can you make this shellcode shorter?)
+
+WHAT IS TO BE DONE:
+You are to write exploits, one per target.  Each exploit, when run in
+the virtual machine with its target installed setuid in /usr/local/bin
+should yield a root shell (/bin/sh) whose effective id is user "t1"
+if it's a target1 exploit, "t2" for target2, etc.  These effective id's
+allow you to read secret messages in secret1, secret2, respectively.
+
+Your task is to attack the targets 1 and 2 for 10 points.  The
+remaining five require differing amounts of sophistication and more
+thought.  You will get extra credit (2 points) for each extra target exploited.
+
+These targets are used in many security courses.  Solutions are on the web.
+Please don't search for solutions.  You have what is needed to solve many of
+these problems.
+
+RESOURCES:
+The following readings are important to understanding approaches to 
+exploiting system vulnerabilities.  By far the most important is 
+the Phrack article by Aleph One describing basic stack smashing methods.
+Scut's paper is important to understanding format string vulnerabilites.
+
+GDB FOR 32-BIT HACKERS
+To understand what's going on, it is helpful to run code through gdb.
+There are GDB tips below; I will probably run a GDB session as well.
+
+You can get help within gdb by typing
+   help <command>
+Some commands are several words long.
+
+Most useful commands:
+   disassemble foo   -- disassembles function foo
+                        you can also disassemble ranges of addresses
+   catch exec        -- halt debugger on exec call; next: run
+                        use with gdb -e <exploit> -s <target>
+   break foo         -- halt on entering function foo
+   list foo          -- show C source code for foo
+   finish	     -- halt before return from this function
+   next              -- step one C instruction; procedure calls count as one
+   step              -- step one C instruction; will crawl into procedure call
+   stepi             -- step one assembly instruction
+   <enter>           -- repeat last command, often with next chunk of memory
+   print <expression> -- evaluate expression, print result
+                         great for math computations
+   x address         -- examine memory at address
+
+You may find the ``x''command useful to examine memory (and the
+different ways you can print the contents such as ``"/a'' ``/i''
+after ``x''). The ``info register''command is helpful in printing
+out the contents of registers such as ebp and esp. ``info frame''
+prints information about current call frame.
+
+A useful way to run gdb is to use the -e and -s command line flags;
+for example, the command ``gdb -e exploit3 -s /usr/local/bin/target3''
+tells gdb to execute exploit3 and use the symbol file in
+target3.  These flags let you trace the execution of the target3 after
+the exploit has called exec.
+
+When running gdb using these command line flags, you should follow
+the following procedure for setting breakpoints and debugging memory:
+
+1. tell gdb to notify you on exec():
+     catch exec
+2. run the program:
+     run
+   debugger stops at point of exec.  You now act as though you're in target
+3. set any breakpoints you want in the target:
+     break bar
+   (setting breakpoints in target when exploit is active will confuse gdb)
+4. resume execution:
+     c
+
+If you wish, you can instrument your code with arbitrary assembly
+using the __asm__ () pseudofunction.  You may prefer to have that
+assembly in a separate file.  For example:
+    .text
+    .globl get_sp
+get_sp:
+    movl   %esp,%eax
+    ret
+can be stored in (say) get_sp.s and added to the gcc command when you
+make your exploit.  (Just as we did in CS237.)
+
+Please hard-code target stack locations in your exploits; do not use
+get_sp (as Aleph One does).  get_sp is a tool you may use in a local
+non set-uid version of the target, though the debugger is almost always
+easier to use.
+
+WHAT SHOULD BE TURNED IN:
+For each target, you will need to submit the source code for your
+exploits, along with any files (Makefile, shellcode.h) necessary for
+building them.  You can tar up the exploits directory with
+   tar cvfz a6.tar.gz ~/a6/exploits
+Again, make sure that you test your exploits within the virtual machine.
+You will be rewarded with secret messages in /usr/local/bin.
+
+
+Readings from Phrack (www.phrack.org):
+
+Aleph One, ``Smashing the Stack for Fun and Profit,'' Phrack 49 #14.
+
+klog, ``The Frame Pointer Overwrite,'' Phrack 55 #08.
+
+scut, ``Exploiting Format String Vulnerabilities",
+   https://crypto.stanford.edu/cs155/papers/formatstring-1.2.pdf
+
+Bulba and Kil3r, ``Bypassing StackGuard and StackShield, Phrack 56 #0x05.
+
+Silvio Cesare, ``Shared Library Call Redirection via ELF PLT Infection,'' Phrack 56 #0x07.
+
+Michel Kaempf, ``Vudo - An Object Superstitiously Believed to Embody Magical Powers,'' Phrack 57 #0x08.
+
+Anonymous, ``Once Upon a free()...,'' Phrack 57 #0x09.
+
+Nergal, ``The Advanced Return-into-lib(c) Exploits: PaX Case Study,'' Phrack 58 #0x04.
+
+Gera and Riq, ``Advances in Format String Exploiting,'' Phrack 59 #0x04.
+
+Anonymous, ``Bypassing PaX ASLR Protection,'' Phrack 59 #0x09.
+
+blexim, ``Basic Integer Overflows,'' Phrack 60 #0x10.
+
+BIGGER ITEMS:
+W. Richard Stevens, /Advanced Programming in the Unix Environment./  Addison-Wesley, 1993.
+AEleen Frisch, /Essential System Administration,/ second edition.  O'Reilly, 1995.
+
+/IA-32 Software Developer's Manual, Vol. 1: Basic Architecture./  Intel, 2001.
+/IA-32 Software Developer's Manual, Vol. 2: Instruction Set Reference./  Intel, 2001.
+/IA-32 Software Developer's Manual, Vol. 3: System Programming Guide./  Intel, 2001.
+
+The latest versions of these manuals are online at
+   http://developer.intel.com/products/processor/manuals/
+
+Dean Elsner, Jay Fenlason, et al., /Using AS./  FSF, 1994.
+Richard Stallman et al., /Using the GNU Compiler Collection/ FSF, 2002.
+Richard Stallman, Roland Pesch, Stan Shebs, et al. /Debugging with GDB./  FSF, 2001.
+
+(These are online at http://www.gnu.org/manual/manual.html .)
+
+
+
